@@ -1,0 +1,21 @@
+[project]
+name = "vlab"
+version = "0.0.1"
+description = "Laboratory Equipment Simulator"
+authors = [
+    {name = "Albino Ndjonale",email = "albinondjonale1@gmail.com"}
+]
+requires-python = ">=3.13,<3.15"
+dependencies = [
+    "pyside6 (>=6.11.1,<7.0.0)",
+    "pyserial (>=3.5,<4.0)",
+    "uvicorn (>=0.52.1,<0.53.0)",
+    "fastapi (>=0.141.1,<0.142.0)",
+    "requests (>=2.34.2,<3.0.0)",
+]
+[project.tools]
+package-mode = true
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
