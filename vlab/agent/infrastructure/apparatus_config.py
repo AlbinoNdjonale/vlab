@@ -13,17 +13,28 @@ class ApparatusConfig:
     exame_system: dict[str, str] = {}
     table_coding: dict[str, str] = {}
 
-    def __init__(self, config_file: str) -> None:
+    def __init__(self, config_file: str, address: str) -> None:
         self.__config_file = config_file
+        self.__address = address
 
         if os.path.exists(self.filename):
-            with open(self.filename, 'r') as file:
-                data = json.loads(file.read())
+            self.read_contract(self.filename) 
+        elif os.path.exists(self.filename_tmp):
+            self.read_contract(self.filename_tmp)
+            os.rename(self.filename_tmp, self.filename)
 
-                for key in self.__fields__:
-                    if key in data:
-                        setattr(self, key, data[key])
+    def read_contract(self, filename: str):
+        with open(filename, 'r') as file:
+            data = json.loads(file.read())
+
+            for key in self.__fields__:
+                if key in data:
+                    setattr(self, key, data[key])
 
     @property
     def filename(self):
         return f'{self.__path__}{self.__config_file}'
+
+    @property
+    def filename_tmp(self):
+        return f'{self.__path__}{self.__address}'

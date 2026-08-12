@@ -1,2 +1,6 @@
 **/__pycache__/
-/vlab/agent/infrastructure/database/
+/vlab/agent/infrastructure/database/*
+!/vlab/agent/infrastructure/database/.gitkeep
+
+/vlab/agent/infrastructure/apparatus_configs/*
+!/vlab/agent/infrastructure/apparatus_configs/.gitkeep

@@ -2,7 +2,7 @@ from .base import BaseModel
 from vlab.agent.infrastructure.api import Api
 
 class LisServer(BaseModel):
-    __filename__ = 'list_server'
+    __filename__ = 'lis_server'
 
     __fields__ = ['base_url']
 

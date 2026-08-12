@@ -16,7 +16,8 @@ class Config(TypedDict, total = False):
     PARITY: str
     STOPBITS: int
 
-    TCP_PORT: Required[int]
+    AGENT_TCP_PORT: Required[int]
+    APPARATUS_TCP_PORT: Required[int]
     TCP_HOST: str
     GATEWAY_MAX_CLIENT: Required[int|Infinit]
     APPARATUS_AS_SERVER: Required[bool]

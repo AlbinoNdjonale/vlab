@@ -118,7 +118,7 @@ async def start_server_tcp(gateway: Gateway, config: Config):
 
     comunication_server = InterfaceTcpIp(
         mode = 'SERVER',
-        port = config['TCP_PORT'],
+        port = config['AGENT_TCP_PORT'],
         multi_client = True
     )
 

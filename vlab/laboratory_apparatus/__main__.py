@@ -39,6 +39,8 @@ async def receive_message(apparatus: Apparatus, nursery: Nursery):
 async def main():
     config = Utils.read_config()
 
+    mode = 'SERVER' if config['APPARATUS_AS_SERVER'] else 'CLIENT'
+
     apparatus = Apparatus(
         Protocol(config['PROTOCOL']),
         InterfaceSerial(
@@ -48,8 +50,9 @@ async def main():
             parity   = config.get('PARITY', 'N'),
             stopbits = config.get('STOPBITS', 1)
         ) if config['SERIAL_MODE'] else InterfaceTcpIp(
-            mode = 'SERVER' if config['APPARATUS_AS_SERVER'] else 'CLIENT',
-            port = config['TCP_PORT'],
+            mode = mode,
+            port = config['APPARATUS_TCP_PORT']\
+                if mode == 'SERVER' else config['AGENT_TCP_PORT'],
             host = config.get('TCP_HOST', '127.0.0.1')
         ),
         'BC-6200',

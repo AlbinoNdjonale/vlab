@@ -62,6 +62,11 @@ class Gateway:
         return None
 
     def receive_message(self, message: bytes, client_id: int):
+        client = self.get_client(client_id)
+
+        if client is None:
+            return
+
         lis_server = LisServer()
 
         message_decode = self.__hl7.parser(message)
@@ -73,7 +78,7 @@ class Gateway:
 
         apparatus = f'{headers["device_name"]}_{headers["supplier"]}'
 
-        apparatus_config = ApparatusConfig(apparatus)
+        apparatus_config = ApparatusConfig(apparatus, client['address'])
 
         message_strucuture = message_decode['json']\
                 ['headers']['message_type']['message_structure']
@@ -132,9 +137,7 @@ class Gateway:
             case _:
                 return
         
-        client = self.get_client(client_id)
-
-        if client and response_message:
+        if response_message:
             self.__links['SERVER']({
                 'comunication': client['conn'],
                 'message': response_message
