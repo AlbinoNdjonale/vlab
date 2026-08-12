@@ -17,7 +17,12 @@ class ProtocolHl7:
         self.__version    = version
 
     def create_message(self, *segments: str) -> bytes:
-        return self.mllp(CR.join(segments)).encode()
+        list_filter = list(filter(
+            lambda segment: segment.strip(),
+            segments
+        ))
+
+        return self.mllp(CR.join(list_filter)).encode()
     
     @property
     def field_separator(self) -> str:

@@ -29,13 +29,75 @@ class Protocol:
     ) -> bytes:
         hl7 = self.__protocol
 
-        return self.__protocol.create_message(
+        return hl7.create_message(
             hl7.segment(
                 'MSH', device_name, supplier, app_receive, facility_receive, datetime,
                 VOID, hl7.field('QBP', 'Q21', 'QBP_Q21'), message_id, mode, hl7.version
             ),
             hl7.segment('QPD', hl7.field('Q11', 'Query', 'HL7'), query_id, sample_id),
             hl7.segment('RCP', priority)
+        )
+
+    def create_order_exame(
+        self,
+        device_name: str,
+        supplier: str,
+        app_receive: str,
+        facility_receive: str,
+        datetime: str,
+        mode: str,
+        message_id: str,
+        message_processing_status: str,
+        requisition_message_id: str,
+        query_result_status: str,
+        requisition_query_id: str,
+        sample_id: str = '',
+        esq_id: str = '',
+        esq_description: str = '',
+        esq_codibg_system: str = '',
+        patient_id: str = '',
+        paient_name: str = '',
+        patient_last_name: str = '',
+        patient_birth: str = '',
+        patient_gender: str = '',
+        exame_orders: list = [],
+        table_coding: dict[str, str] = {},
+        exam_sytem: dict = {},
+        alternative_patient_id: str = ''
+    ):
+        hl7 = self.__protocol
+
+        return hl7.create_message(
+            hl7.segment(
+                'MSH', app_receive, facility_receive, device_name, supplier, datetime,
+                VOID, hl7.field('RSP', 'K21', 'RSP_K21'), message_id, mode, hl7.version
+            ),
+            hl7.segment('MSA', message_processing_status, requisition_message_id),
+            hl7.segment('QAK', requisition_query_id, query_result_status),
+            hl7.segment(
+                'QPD', hl7.field(esq_id, esq_description, esq_codibg_system),
+                requisition_query_id, sample_id
+            ),
+            hl7.segment(
+                'PID', '1', VOID, patient_id, alternative_patient_id, hl7.field(paient_name, patient_last_name),
+                VOID, patient_birth, patient_gender
+            ) if patient_id else '',
+            *[
+                hl7.segment(
+                    'OBR',
+                    str(idx),
+                    exame_order['id'],
+                    exame_order['executor_side_id'],
+                    hl7.field(
+                        table_coding[exame_order['exam_id']],
+                        exame_order['exam_description'],
+                        exam_sytem[exame_order['exam_id']]
+                    ),
+                    *(['']*20),
+                    exame_order['exam_result_status']
+                )
+                for idx, exame_order in enumerate(exame_orders)
+            ]
         )
 
     def parser(self, mesage: bytes):

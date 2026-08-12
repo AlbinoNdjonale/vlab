@@ -32,7 +32,7 @@ async def receive_message(apparatus: Apparatus, nursery: Nursery):
             nursery.stop_all_tasks()
             break
 
-        print(f'Mensagem: {message}')
+        print(f'\nMensagem: {message}')
         
         print('\nEsperando: ...\n-> ', end = '')
 
@@ -55,7 +55,8 @@ async def main():
         'BC-6200',
         'MINDRAY',
         'LIS_SERVER',
-        'LAB_CENTRAL'
+        'LAB_CENTRAL',
+        config.get('MODE', 'P')
     )
 
     async with Nursery() as nursery:
@@ -64,7 +65,7 @@ async def main():
             nursery.create_task(receive_message(apparatus, nursery))
         except:
             nursery.stop_all_tasks()
-
+    
     apparatus.close()
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ from typing import cast
 import os
 
 class BaseModel(ABC):
-    __path__: str = './vlab/agent/infrastructure/entity/'
+    __path__: str = './vlab/agent/infrastructure/database/'
     
     __filename__: str|None = None
     __fields__: list[str]|None = None
@@ -20,7 +20,7 @@ class BaseModel(ABC):
                 )
 
         if not os.path.exists(self.filename):
-            with open(self.filename, 'w'): ...
+            with open(self.filename, 'w') as file: file.write("{}")
         else:
             with open(self.filename, 'r') as file:
                 data = json.loads(file.read())

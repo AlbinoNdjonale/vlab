@@ -15,7 +15,7 @@ async def send_message(gateway: Gateway):
     while True:
         message_data = await queue.get()
         queue.task_done()
-        
+
         comunication: InterfaceTcpIp|InterfaceSerial = message_data['comunication']
         message = message_data['message']
 
@@ -129,13 +129,13 @@ async def start_server_tcp(gateway: Gateway, config: Config):
     if server:
         async with Nursery() as nursery:
             for _ in Utils.take_numbres(config['GATEWAY_MAX_CLIENT']):
-                client_conn, client_address = await loop.sock_accept(server)
-                
+                client_conn, client_address = await loop.sock_accept(server) 
                 client_ip: str
                 client_ip, _ = client_address
+                
                 comunication_client = InterfaceTcpIp(client = client_conn)
 
-                client_id = gateway.add_client(comunication_server, client_address)
+                client_id = gateway.add_client(comunication_client, client_address)
 
                 nursery.create_task(handle_client(gateway, comunication_client, client_id))
 
@@ -144,9 +144,9 @@ async def start_server_tcp(gateway: Gateway, config: Config):
 async def main():
     config = Utils.read_config()
 
-    gateway = Gateway(Protocol(config['PROTOCOL']))
+    gateway = Gateway(Protocol(config['PROTOCOL']), config.get('MODE', 'P'))
 
     async with Nursery() as nursery:
         nursery.create_task(start_server_tcp(gateway, config))
         nursery.create_task(connect_serial(gateway, config))
-        nursery.create_task(connect_server(gateway, config))
+        nursery.create_task(send_message(gateway))

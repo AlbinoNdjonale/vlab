@@ -21,6 +21,8 @@ class Config(TypedDict, total = False):
     GATEWAY_MAX_CLIENT: Required[int|Infinit]
     APPARATUS_AS_SERVER: Required[bool]
 
+    MODE: Literal['P', 'T', 'D']
+
 START_COMMENT = '#'
 
 class Utils:
