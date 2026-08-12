@@ -3,7 +3,14 @@ from datetime import datetime
 from vlab.use_protocol import Protocol
 
 import socket
-from typing import Callable, Literal, Protocol as Interface, TypeAlias, TypedDict
+from typing import (
+    Callable,
+    Literal,
+    NotRequired,
+    Protocol as Interface,
+    TypeAlias,
+    TypedDict
+)
 
 from .infrastructure.apparatus_config import ApparatusConfig
 from .infrastructure.entity.lis_server import LisServer 
@@ -27,6 +34,7 @@ ModeProcessing: TypeAlias = Literal['P', 'T', 'D']
 class Client(TypedDict):
     conn: Comunication
     address: str
+    name: NotRequired[str]
     id: int
 
 class Gateway:
@@ -61,6 +69,14 @@ class Gateway:
 
         return None
 
+    @property
+    def get_devices(self) -> list[Client]:
+        return self.__clients
+
+    @property
+    def apparatus_config(self):
+        return ApparatusConfig
+
     def receive_message(self, message: bytes, client_id: int):
         client = self.get_client(client_id)
 
@@ -78,10 +94,13 @@ class Gateway:
 
         apparatus = f'{headers["device_name"]}_{headers["supplier"]}'
 
+        if client.get('name') is None:
+            client['name'] = apparatus
+
         apparatus_config = ApparatusConfig(apparatus, client['address'])
 
         message_strucuture = message_decode['json']\
-                ['headers']['message_type']['message_structure']
+            ['headers']['message_type']['message_structure']
 
         response_message: bytes|None = None
 

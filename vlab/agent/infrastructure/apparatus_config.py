@@ -38,3 +38,8 @@ class ApparatusConfig:
     @property
     def filename_tmp(self):
         return f'{self.__path__}{self.__address}'
+
+    @staticmethod
+    def create_config(filenname: str, content: dict):
+        with open(f'{ApparatusConfig.__path__}{filenname}', 'w') as file:
+            file.write(json.dumps(content))

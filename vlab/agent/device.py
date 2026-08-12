@@ -1,5 +1,7 @@
 import asyncio
 import socket
+from typing import Any, Protocol
+
 from vlab.use_protocol import Protocol
 
 from vlab.comunication import InterfaceSerial, InterfaceTcpIp
@@ -7,6 +9,13 @@ from vlab.utils import Utils, Config
 
 from .gateway import Gateway
 from vlab.nursery import Nursery
+
+class DynamicState(Protocol):
+    def __getattr__(self, name: str) -> Any: ...
+    def __setattr__(self, name: str, value: Any) -> None: ...
+
+class HasDynamicState(Protocol):
+    state: DynamicState
 
 async def send_message(gateway: Gateway):
     queue = asyncio.Queue()
@@ -135,16 +144,18 @@ async def start_server_tcp(gateway: Gateway, config: Config):
                 
                 comunication_client = InterfaceTcpIp(client = client_conn)
 
-                client_id = gateway.add_client(comunication_client, client_address)
+                client_id = gateway.add_client(comunication_client, client_ip)
 
                 nursery.create_task(handle_client(gateway, comunication_client, client_id))
 
     comunication_server.close()
 
-async def main():
+async def main(app: HasDynamicState):
     config = Utils.read_config()
 
     gateway = Gateway(Protocol(config['PROTOCOL']), config.get('MODE', 'P'))
+
+    app.state.gateway = gateway
 
     async with Nursery() as nursery:
         nursery.create_task(start_server_tcp(gateway, config))
