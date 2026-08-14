@@ -71,9 +71,13 @@ class Gateway:
 
         return self.__next_client_id
 
-    def get_client(self, id: int) -> Client|None:
+    def get_client(
+        self,
+        id: int|str,
+        by: Literal['id', 'address'] = 'id'
+    ) -> Client|None:
         for clinet in self.__clients:
-            if clinet['id'] == id:
+            if clinet[by] == id:
                 return clinet
 
         return None

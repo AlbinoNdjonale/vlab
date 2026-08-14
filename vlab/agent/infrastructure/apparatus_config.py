@@ -67,10 +67,19 @@ class ApparatusConfig:
         return os.path.exists(self.filename)
     
     @staticmethod
-    def create_config(filenname: str, content: dict):
-        with open(f'{ApparatusConfig.__path__}{filenname}', 'w') as file:
+    def set_contract(filename: str, content: dict):
+        with open(f'{ApparatusConfig.__path__}{filename}', 'w') as file:
             file.write(json.dumps(content))
 
+    @staticmethod
+    def remove_contract(*filenames: str):
+        for filename in filenames:
+            if not filename: continue
+
+            contract = f'{ApparatusConfig.__path__}{filename}'
+            if os.path.exists(contract):
+                os.remove(contract)
+    
     @staticmethod
     def set_protocol(protocol: Protocol, device_address: str):
         with open(f'{ApparatusConfig.__pathaddress__}{device_address}', 'w') as file:

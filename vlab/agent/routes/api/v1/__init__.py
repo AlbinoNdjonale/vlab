@@ -38,21 +38,30 @@ async def config_device(request: Request):
     except:
         return JSONResponse({"detail": "Invalid body"}, 400)
 
-    if (addres := data.get("device_address")) is None or addres.split() == '':
+    if (address := data.get("device_address")) is None or address.split() == '':
         return JSONResponse({"'device_address' is required"}, 400)
 
     gateway: Gateway = request.app.state.gateway
 
     if data.get('protocol'):
         try:
-            gateway.apparatus_config.set_protocol(data['protocol'], addres)
+            gateway.apparatus_config.set_protocol(data['protocol'], address)
         except:
             return JSONResponse({"detail": "Error to save config, Try Again"}, 500)
     
     if data.get('contract'):
         try:
-            gateway.apparatus_config.create_config(data['device_address'], data['contract'])
+            gateway.apparatus_config.set_contract(data['device_address'], data['contract'])
         except:
             return JSONResponse({"detail": "Error to save config, Try Again"}, 500)
 
     return {"detail": "Config saved"}
+
+@v1_routes.delete('/delete_contract/{address}')
+def delete_contract(request: Request, address: str):
+    gateway: Gateway = request.app.state.gateway
+
+    client = gateway.get_client(address, by = 'address')
+
+    if client:
+        gateway.apparatus_config.remove_contract(client.get('name', ''), client['address'])
