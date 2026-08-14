@@ -53,7 +53,7 @@ class ProtocolHl7:
     def segment(self, segment_name: str, *fields: str) -> str:
         if segment_name == 'MSH' and (not fields[0] == self.__separotors):
             fields = (self.__separotors[1:], *fields)
-
+        
         return self.field_separator.join([segment_name, *fields])
 
     def field(self, *components: str) -> str:

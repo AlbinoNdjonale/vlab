@@ -38,11 +38,17 @@ class Client(TypedDict):
     id: int
 
 class Gateway:
-    def __init__(self, protocol: Protocol, mode: ModeProcessing = 'P') -> None:
+    def __init__(
+        self,
+        hl7_protocol: Protocol,
+        astm_protocol: Protocol,
+        mode: ModeProcessing = 'P'
+    ) -> None:
         self.__clients: list[Client] = []
         self.__links: dict[Mode, Link] = {}
 
-        self.__hl7 = protocol
+        self.__hl7  = hl7_protocol
+        self.__astm = astm_protocol
 
         self.__mode = mode
 
@@ -77,15 +83,23 @@ class Gateway:
     def apparatus_config(self):
         return ApparatusConfig
 
+    def protocol(self, protocol_name: Literal['HL7', 'ASTM']) -> Protocol:
+        return self.__hl7 if protocol_name == 'HL7' else self.__astm
+
     def receive_message(self, message: bytes, client_id: int):
         client = self.get_client(client_id)
 
         if client is None:
             return
 
-        lis_server = LisServer()
+        apparatus_config = ApparatusConfig(client['address'])
 
-        message_decode = self.__hl7.parser(message)
+        if (protocol_name := apparatus_config.protocol) is None:
+            return
+
+        protocol = self.protocol(protocol_name)
+
+        message_decode = protocol.parser(message)
 
         if message_decode is None: return
         
@@ -94,13 +108,15 @@ class Gateway:
 
         apparatus = f'{headers["device_name"]}_{headers["supplier"]}'
 
-        if client.get('name') is None:
-            client['name'] = apparatus
+        apparatus_config.set_apparatus(apparatus)
 
-        apparatus_config = ApparatusConfig(apparatus, client['address'])
+        if client.get('name') is None:
+            client['name'] = apparatus 
 
         message_strucuture = message_decode['json']\
             ['headers']['message_type']['message_structure']
+
+        lis_server = LisServer()
 
         response_message: bytes|None = None
 
@@ -111,7 +127,7 @@ class Gateway:
                     'facility_receive': headers['facility_receive'],
                     'device_name': headers['device_name'],
                     'supplier': headers['supplier'],
-                    'datetime': self.__hl7.format_date(datetime.now()),
+                    'datetime': protocol.format_date(datetime.now()),
                     'message_id': str(datetime.now().timestamp())[12:],
                     'mode': self.__mode,
                     'requisition_message_id': headers['message_id'],
@@ -121,14 +137,14 @@ class Gateway:
                 error, exam_orders = lis_server.exam_orders(message_decode_json)
 
                 if error:
-                    response_message = self.__hl7.create_order_exame(
+                    response_message = protocol.create_order_exame(
                         **params_base,   
                         message_processing_status = 'AE',
                         query_result_status = 'AE'
                     )
 
                 elif exam_orders is None:
-                    response_message = self.__hl7.create_order_exame(
+                    response_message = protocol.create_order_exame(
                         **params_base,
                         message_processing_status = 'AA',
                         query_result_status = 'NF'
@@ -136,20 +152,21 @@ class Gateway:
                 else:
                     esq = message_decode_json['equipment_standard_query']
 
-                    patient = exam_orders['patient']
+                    patient = exam_orders.get('patient', {})
 
-                    response_message = self.__hl7.create_order_exame(
+                    response_message = protocol.create_order_exame(
                         **params_base,
                         message_processing_status = 'AA',
                         query_result_status = 'OK',
                         esq_id = esq['identifier'],
                         esq_description = esq['description'],
                         esq_codibg_system = esq['coding_system'],
-                        patient_id = patient['id'],
-                        paient_name = patient['name'],
-                        patient_last_name = patient['last_name'],
-                        patient_gender = patient['gender'],
-                        patient_birth = patient['birth'],
+                        patient_id = patient.get('id') or '',
+                        paient_name = patient.get('name') or '',
+                        patient_last_name = patient.get('last_name') or '',
+                        patient_gender = patient.get('gender') or '',
+                        patient_birth = patient.get('birth') or '',
+                        exame_orders = exam_orders.get('exam_orders') or [],
                         table_coding = apparatus_config.table_coding,
                         exam_sytem = apparatus_config.exame_system
                     )

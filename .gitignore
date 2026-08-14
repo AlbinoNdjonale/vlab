@@ -3,4 +3,6 @@
 !/vlab/agent/infrastructure/database/.gitkeep
 
 /vlab/agent/infrastructure/apparatus_configs/*
-!/vlab/agent/infrastructure/apparatus_configs/.gitkeep
+!/vlab/agent/infrastructure/apparatus_configs/DEFAULT_HL7
+!/vlab/agent/infrastructure/apparatus_configs/DEFAULT_ASTM
+!/vlab/agent/infrastructure/apparatus_configs/address/.gitkeep

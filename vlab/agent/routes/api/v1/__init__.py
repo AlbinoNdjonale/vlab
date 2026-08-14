@@ -10,7 +10,7 @@ v1_routes = APIRouter()
 def serial_ports():
     return [
         {
-            'id': port.name,
+            'id': port.device,
             'name': port.product,
             'description': port.description,
             'display': ':'.join([
@@ -42,6 +42,12 @@ async def config_device(request: Request):
         return JSONResponse({"'device_address' is required"}, 400)
 
     gateway: Gateway = request.app.state.gateway
+
+    if data.get('protocol'):
+        try:
+            gateway.apparatus_config.set_protocol(data['protocol'], addres)
+        except:
+            return JSONResponse({"detail": "Error to save config, Try Again"}, 500)
     
     if data.get('contract'):
         try:

@@ -153,7 +153,11 @@ async def start_server_tcp(gateway: Gateway, config: Config):
 async def main(app: HasDynamicState):
     config = Utils.read_config()
 
-    gateway = Gateway(Protocol(config['PROTOCOL']), config.get('MODE', 'P'))
+    gateway = Gateway(
+        Protocol('HL7'),
+        Protocol('ASTM'),
+        config.get('MODE', 'P')
+    )
 
     app.state.gateway = gateway
 

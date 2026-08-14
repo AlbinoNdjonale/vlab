@@ -1,0 +1,11 @@
+{
+    "message_codes": {
+      "QBP_Q21": "query_exam_orders"
+    },
+    "exame_system": {
+	"00001": "00001"
+    },
+    "table_coding": {
+	"00001": "LOCAL"
+    }
+}

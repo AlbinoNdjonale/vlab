@@ -10,6 +10,8 @@ class Protocol:
 
         if protocol_name == 'HL7':
             self.__protocol = ProtocolHl7()
+        elif protocol_name == 'ASTM':
+            ...
         else:
             raise ValueError(f'Protocol not valid: {protocol_name}')
 
@@ -79,24 +81,27 @@ class Protocol:
                 requisition_query_id, sample_id
             ),
             hl7.segment(
-                'PID', '1', VOID, patient_id, alternative_patient_id, hl7.field(paient_name, patient_last_name),
+                'PID', '1', VOID, patient_id, alternative_patient_id, hl7.field(
+                    paient_name,
+                    patient_last_name
+                ),
                 VOID, patient_birth, patient_gender
             ) if patient_id else '',
             *[
                 hl7.segment(
                     'OBR',
-                    str(idx),
-                    exame_order['id'],
-                    exame_order['executor_side_id'],
+                    str(idx+1),
+                    exam_order.get('id') or VOID,
+                    exam_order.get('executor_side_id') or VOID,
                     hl7.field(
-                        table_coding[exame_order['exam_id']],
-                        exame_order['exam_description'],
-                        exam_sytem[exame_order['exam_id']]
+                        exam_sytem.get(exam_order.get('exam_id') or VOID) or VOID,
+                        exam_order.get('exam_description') or VOID,
+                        table_coding.get(exam_order.get('exam_id') or VOID) or VOID
                     ),
                     *(['']*20),
-                    exame_order['exam_result_status']
+                    exam_order.get('exam_result_status') or VOID
                 )
-                for idx, exame_order in enumerate(exame_orders)
+                for idx, exam_order in enumerate(exame_orders)
             ]
         )
 
