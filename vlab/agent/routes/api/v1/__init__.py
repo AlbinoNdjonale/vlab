@@ -63,5 +63,9 @@ def delete_contract(request: Request, address: str):
 
     client = gateway.get_client(address, by = 'address')
 
-    if client:
-        gateway.apparatus_config.remove_contract(client.get('name', ''), client['address'])
+    if client is None:
+        return JSONResponse({'detail': 'Device not found'}, 404)
+    
+    gateway.apparatus_config.remove_contract(client.get('name', ''), client['address'])
+    
+    return {'detail': 'Contract deleted'}
