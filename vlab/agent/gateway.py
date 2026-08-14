@@ -35,6 +35,8 @@ class Client(TypedDict):
     conn: Comunication
     address: str
     name: NotRequired[str]
+    protocol: NotRequired[Literal['HL7', 'ASTM']]
+    has_contract: bool
     id: int
 
 class Gateway:
@@ -63,6 +65,7 @@ class Gateway:
         self.__clients.append({
             'conn': client_conn,
             'address': address,
+            'has_contract': False,
             'id': self.__next_client_id
         })
 
@@ -97,6 +100,9 @@ class Gateway:
         if (protocol_name := apparatus_config.protocol) is None:
             return
 
+        if client.get('protocol') is None:
+            client['protocol'] = protocol_name
+
         protocol = self.protocol(protocol_name)
 
         message_decode = protocol.parser(message)
@@ -109,6 +115,8 @@ class Gateway:
         apparatus = f'{headers["device_name"]}_{headers["supplier"]}'
 
         apparatus_config.set_apparatus(apparatus)
+
+        client['has_contract'] = apparatus_config.has_contract
 
         if client.get('name') is None:
             client['name'] = apparatus 

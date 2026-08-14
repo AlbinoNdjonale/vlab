@@ -61,7 +61,11 @@ class ApparatusConfig:
     @property
     def protocol(self):
         return self.__protocol
-
+    
+    @property
+    def has_contract(self):
+        return os.path.exists(self.filename)
+    
     @staticmethod
     def create_config(filenname: str, content: dict):
         with open(f'{ApparatusConfig.__path__}{filenname}', 'w') as file:
