@@ -6,7 +6,7 @@ from vlab.agent.gateway import Gateway
 
 v1_routes = APIRouter()
 
-@v1_routes.get('/serialports')
+@v1_routes.get('/serial_ports')
 def serial_ports():
     return [
         {
@@ -37,6 +37,17 @@ async def connect_device(request: Request):
     gateway.add_device(connection.get('address'), connection.get('port'))
 
     return {'detail': 'Proccess add'}
+
+@v1_routes.get('/device/{address}')
+async def get_device(request: Request, address: str):
+    gateway: Gateway = request.app.state.gateway
+
+    client = gateway.get_client(address, by = 'address')
+
+    if client is None:
+        return JSONResponse({'detail': 'Device not found'}, 404)
+     
+    return {key: value for key, value in client.items() if key not in ['id', 'conn']}
 
 @v1_routes.get('/devices')
 def devices(request: Request):
