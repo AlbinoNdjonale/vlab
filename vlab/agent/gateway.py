@@ -31,11 +31,13 @@ Link: TypeAlias = Callable[..., None]
 
 ModeProcessing: TypeAlias = Literal['P', 'T', 'D']
 
+ProtocolName: TypeAlias = Literal['HL7', 'ASTM']
+
 class Client(TypedDict):
     conn: Comunication
     address: str
     name: NotRequired[str]
-    protocol: NotRequired[Literal['HL7', 'ASTM']]
+    protocol: NotRequired[ProtocolName]
     has_contract: bool
     id: int
 
@@ -56,18 +58,28 @@ class Gateway:
 
         self.__next_client_id = 0
     
-    @property
-    def get_connn(self) -> socket.socket|None: ...
+    def add_device(self, address: str, port: int|None = None):
+        if port: # TCP/IP
+            self.__links['CLIENT']({'host': address, 'port': port})
+        else: # SERIAL
+            self.__links['SERIAL']({'port': address})
 
     def add_client(self, client_conn: Comunication, address: str) -> int:
         self.__next_client_id += 1
+        
+        apparatus_config = ApparatusConfig(address)
 
-        self.__clients.append({
+        client: Client = {
             'conn': client_conn,
             'address': address,
-            'has_contract': False,
+            'has_contract': apparatus_config.has_contract,
             'id': self.__next_client_id
-        })
+        }
+
+        if (protocol := apparatus_config.protocol):
+            client['protocol'] = protocol
+
+        self.__clients.append(client)
 
         return self.__next_client_id
 
@@ -90,8 +102,25 @@ class Gateway:
     def apparatus_config(self):
         return ApparatusConfig
 
-    def protocol(self, protocol_name: Literal['HL7', 'ASTM']) -> Protocol:
+    def protocol(self, protocol_name: ProtocolName) -> Protocol:
         return self.__hl7 if protocol_name == 'HL7' else self.__astm
+    
+    def buffer_manager(self, client_id: int):
+        while True:
+            client = self.get_client(client_id) 
+            
+            if client:
+                protocol = None
+                if (protocol_name := client.get('protocol')) is None:
+                    apparatus_config = ApparatusConfig(client['address'])
+
+                    if (protocol := apparatus_config.protocol):
+                        client['protocol'] = protocol
+
+                if protocol := client.get('protocol'):
+                    return (
+                        self.__hl7 if protocol == 'HL7' else self.__astm
+                    ).buffer_manager
 
     def receive_message(self, message: bytes, client_id: int):
         client = self.get_client(client_id)

@@ -12,16 +12,16 @@ class ApparatusConfig:
 
     __fields__ = ['message_codes', 'exame_system', 'table_coding']
 
-    __protocol: Protocol|None = None
-
-    message_codes: dict[str, MessageCode] = {}
-    exame_system: dict[str, str] = {}
-    table_coding: dict[str, str] = {}
-
     def __init__(self, address: str) -> None:
-        self.__address = address
+        self.__address = ApparatusConfig.escape(address)
 
-        file_protocol = f'{ApparatusConfig.__pathaddress__}{address}'
+        self.__config_file: str|None = None
+        self.__protocol: Protocol|None = None
+        self.message_codes: dict[str, MessageCode] = {}
+        self.exame_system: dict[str, str] = {}
+        self.table_coding: dict[str, str] = {}
+
+        file_protocol = f'{ApparatusConfig.__pathaddress__}{self.__address}'
         if os.path.exists(file_protocol):
             with open(file_protocol, 'r') as file:
                 self.__protocol = cast(Protocol, file.read())
@@ -64,11 +64,17 @@ class ApparatusConfig:
     
     @property
     def has_contract(self):
-        return os.path.exists(self.filename)
+        return (
+            os.path.exists(self.filename_tmp) or
+            (bool(self.__config_file) and os.path.exists(self.filename))
+        )
     
     @staticmethod
     def set_contract(filename: str, content: dict):
-        with open(f'{ApparatusConfig.__path__}{filename}', 'w') as file:
+        with open(
+            ApparatusConfig.__path__ + ApparatusConfig.escape(filename),
+            'w'
+        ) as file:
             file.write(json.dumps(content))
 
     @staticmethod
@@ -82,5 +88,12 @@ class ApparatusConfig:
     
     @staticmethod
     def set_protocol(protocol: Protocol, device_address: str):
-        with open(f'{ApparatusConfig.__pathaddress__}{device_address}', 'w') as file:
+        with open(
+            ApparatusConfig.__pathaddress__ + ApparatusConfig.escape(device_address),
+            'w'
+        ) as file:
             file.write(protocol)
+
+    @staticmethod
+    def escape(text: str):
+        return text.replace('/', '_')

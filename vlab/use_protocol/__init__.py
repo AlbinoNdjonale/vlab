@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TypeAlias, Literal
+from typing import Callable, TypeAlias, Literal
 
 from vlab.protocols import ProtocolHl7, VOID
 from vlab.utils import ProtocolName
@@ -14,6 +14,12 @@ class Protocol:
             ...
         else:
             raise ValueError(f'Protocol not valid: {protocol_name}')
+
+    def buffer_manager(
+        self,
+        receive: Callable[[], bytes]|None = None
+    ):
+        return self.__protocol.buffer_manager(receive)
 
     def create_query_worklist(
         self,

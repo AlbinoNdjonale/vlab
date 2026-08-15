@@ -1,4 +1,5 @@
 import serial
+from serial.tools import list_ports
 
 class InterfaceNotStartedError(Exception):
     def __init__(self) -> None:
@@ -33,16 +34,35 @@ class InterfaceSerial:
     @property
     def get_conn(self):
         return None
+
+    @property
+    def get_bytes(self):
+        return 1
     
     def receive_message(self) -> bytes:
         if self.__device is None: raise InterfaceNotStartedError()
         
-        return self.__device.readline() 
+        return self.__device.read(self.get_bytes)
 
     def send_message(self, message: bytes) -> bool:
         if self.__device is None: raise InterfaceNotStartedError()
+
+        self.__device.write
+
+        writed = self.__device.write(message)
+        self.__device.flush()
         
-        return self.__device.write(message) is not None
+        return writed is not None
+
+    @property
+    def id(self) -> str:
+        for port in list_ports.comports():
+            if port.device == self.__serial_port:
+                if port.serial_number:
+                    return port.serial_number
+
+                return f'{port.vid}.{port.pid}.{port.location}'
+        return self.__serial_port
 
     def close(self): 
         if self.__device is not None:

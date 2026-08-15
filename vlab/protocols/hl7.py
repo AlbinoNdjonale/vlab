@@ -1,4 +1,5 @@
 import re
+from typing import Callable, Literal
 
 SEPARATORS = '|^~\\&'
 
@@ -64,6 +65,37 @@ class ProtocolHl7:
 
     def repetition(self, *fields: str) -> str:
         return self.repetition_separator.join(fields)
+
+    def buffer_manager(
+        self,
+        receive: Callable[[], bytes]|None = None
+    ) -> Callable[[bytes|None], bytes|Literal['AWAIT']]:
+        buffer = b''
+
+        def manager(message: bytes|None = None) -> bytes|Literal['AWAIT']:
+            nonlocal buffer
+
+            if message is not None:
+                if message == b'':
+                    return b''
+                buffer += message
+
+                if not buffer.endswith(f'{FS}{CR}'.encode()):
+                    return 'AWAIT'
+            elif receive:
+                while not buffer.endswith(f'{FS}{CR}'.encode()):
+                    new_buffer = receive()
+                    if new_buffer == b'':
+                        return b''
+                    buffer += new_buffer
+            else:
+                raise Exception('Manager Buffer error')
+            
+            buffer_ = buffer
+            buffer = b''
+            return buffer_
+
+        return manager
 
     def hl7_to_array(self, value_: str, re_sep, seps: list, level = 0):
         value = re.split(re_sep(seps[level]), value_)

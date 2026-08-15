@@ -42,8 +42,12 @@ async def handle_client_server(
     client_id: int
 ):
     try:
+        buffer_manager = await asyncio.to_thread(gateway.buffer_manager, client_id)
+        receive_message = buffer_manager(comunication.receive_message)
         while True:
-            message = await asyncio.to_thread(comunication.receive_message)
+            message = await asyncio.to_thread(receive_message, None)
+
+            if message == 'AWAIT': continue
             
             if not message:break
 
@@ -54,10 +58,16 @@ async def handle_client_server(
 async def handle_client(gateway: Gateway, comunication: InterfaceTcpIp, client_id: int):
     try:
         client = comunication.get_conn
-        if client:
-            while True:
-                message = await asyncio.get_running_loop()\
+        if client: 
+            buffer_manager = await asyncio.to_thread(gateway.buffer_manager, client_id)
+            receive_message = buffer_manager()
+            while True: 
+                buffer = await asyncio.get_running_loop()\
                     .sock_recv(client, comunication.get_bytes)
+
+                message = receive_message(buffer)
+
+                if message == 'AWAIT': continue
 
                 if not message:break
 
@@ -71,9 +81,13 @@ async def handle_client_serial(
     client_id: int
 ):
     try:
+        buffer_manager = await asyncio.to_thread(gateway.buffer_manager, client_id)
+        receive_message = buffer_manager(comunication.receive_message)
         while True:
-            message = await asyncio.to_thread(comunication.receive_message)
-            
+            message = await asyncio.to_thread(receive_message, None)
+
+            if message == 'AWAIT': continue
+
             if not message:break
 
             gateway.receive_message(message, client_id)
@@ -118,7 +132,9 @@ async def connect_serial(gateway: Gateway, config: Config):
                 stopbits = connec_data.get('stopbits', config.get('STOPBITS', 1))
             )
 
-            client_id = gateway.add_client(comunication, connec_data.get('port'))
+            comunication.start_connection()
+
+            client_id = gateway.add_client(comunication, comunication.id)
 
             nursery.create_task(handle_client_serial(gateway, comunication, client_id))
 
@@ -138,10 +154,10 @@ async def start_server_tcp(gateway: Gateway, config: Config):
     if server:
         async with Nursery() as nursery:
             for _ in Utils.take_numbres(config['GATEWAY_MAX_CLIENT']):
-                client_conn, client_address = await loop.sock_accept(server) 
+                client_conn, client_address = await loop.sock_accept(server)
                 client_ip: str
                 client_ip, _ = client_address
-                
+
                 comunication_client = InterfaceTcpIp(client = client_conn)
 
                 client_id = gateway.add_client(comunication_client, client_ip)
@@ -163,5 +179,6 @@ async def main(app: HasDynamicState):
 
     async with Nursery() as nursery:
         nursery.create_task(start_server_tcp(gateway, config))
+        nursery.create_task(connect_server(gateway, config))
         nursery.create_task(connect_serial(gateway, config))
         nursery.create_task(send_message(gateway))

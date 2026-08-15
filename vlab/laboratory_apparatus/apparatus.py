@@ -79,9 +79,14 @@ class Apparatus:
 
                    return f'Perguntando ao sistema o que fazer com a amostra {sample["id"]}'\
                         if sucess else 'Erro ao enviar mensagem'
-
-    def receive_message(self) -> bytes:
-        return self.__comunication.receive_message()
+    
+    @property
+    def buffer_manager(self):
+        return self.__protocol.buffer_manager
+    
+    @property
+    def receive_message(self):
+        return self.__comunication.receive_message
 
     def generate_unique_identifier(self, prefix = '') -> str:
         while True:

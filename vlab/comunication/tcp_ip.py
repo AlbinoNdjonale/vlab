@@ -48,7 +48,6 @@ class InterfaceTcpIp:
         else:
             self.__client_connection = self.__server
             self.__client_connection.connect((self.__host, self.__port))
-            print('connected')
 
     @property
     def get_conn(self) -> socket.socket|None:

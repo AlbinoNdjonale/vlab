@@ -12,21 +12,23 @@ async def send_message(apparatus: Apparatus, nursery: Nursery):
         command = (await asyncio.to_thread(input, '-> ')).split(' ')
 
         response = None
-
         match command[0]:
             case 'q':
                 nursery.stop_all_tasks()
-            case 'set_sample':
-                response = apparatus.exec(command[0], *command[1:])
-            case 'query':
+                break
+            case 'set_sample' | 'query':
                 response = apparatus.exec(command[0], *command[1:])
             
         if response is not None:
             print(f'{response}\n')
 
 async def receive_message(apparatus: Apparatus, nursery: Nursery):
+    buffer_manager  = apparatus.buffer_manager
+    receive_message = buffer_manager(apparatus.receive_message)
     while True:
-        message = await asyncio.to_thread(apparatus.receive_message)
+        message = await asyncio.to_thread(receive_message, None)
+
+        if message == 'AWAIT':continue
 
         if not message:
             nursery.stop_all_tasks()

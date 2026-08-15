@@ -22,6 +22,22 @@ def serial_ports():
         if port.vid or port.pid
     ]
 
+@v1_routes.post('/connect_device')
+async def connect_device(request: Request):
+    try:
+        connection = await request.json()
+    except:
+        return JSONResponse({"detail": "Invalid body"}, 400)
+
+    if connection.get('address') is None:
+        return JSONResponse({'detail': f"Property 'address' is required"}, 400)
+
+    gateway: Gateway = request.app.state.gateway
+
+    gateway.add_device(connection.get('address'), connection.get('port'))
+
+    return {'detail': 'Proccess add'}
+
 @v1_routes.get('/devices')
 def devices(request: Request):
     gateway: Gateway = request.app.state.gateway
