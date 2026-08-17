@@ -152,10 +152,12 @@ class Gateway:
         client['has_contract'] = apparatus_config.has_contract
 
         if client.get('name') is None:
-            client['name'] = apparatus 
+            client['name'] = apparatus
 
-        message_strucuture = message_decode['json']\
-            ['headers']['message_type']['message_structure']
+        message_type = headers['message_type'] 
+
+        message_strucuture = message_type.get('message_structure') or\
+            f'{message_type.get("message_code")}_{message_type.get("trigger_event")}'
 
         lis_server = LisServer()
 
