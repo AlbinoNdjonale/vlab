@@ -15,7 +15,7 @@ class Sample(TypedDict):
     id: str
 
 ApparatusMode: TypeAlias = Literal['P', 'T', 'D']
-Command: TypeAlias = Literal['query', 'set_sample']
+Command: TypeAlias = Literal['analyze', 'set_sample']
 
 class Apparatus:
     def __init__(
@@ -57,7 +57,7 @@ class Apparatus:
                 })
 
                 return f"Amostra com ID '{params[0]}' adicionado na rack"
-            case 'query':
+            case 'analyze':
                 if not self.__samples: return 'Sem amostras na rack'
 
                 for sample in self.__samples:

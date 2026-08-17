@@ -16,7 +16,7 @@ async def send_message(apparatus: Apparatus, nursery: Nursery):
             case 'q':
                 nursery.stop_all_tasks()
                 break
-            case 'set_sample' | 'query':
+            case 'set_sample' | 'analyze':
                 response = apparatus.exec(command[0], *command[1:])
             
         if response is not None:
