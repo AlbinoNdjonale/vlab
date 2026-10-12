@@ -9,7 +9,7 @@ class Api:
     __timeout__ = (3, 15)
 
     @staticmethod
-    def joker(method: str, url: str, data: dict|None = None) -> Response|None:
+    def joker(method: str, url: str, data = None) -> Response|None:
         try:
             response = request(
                 method,
@@ -18,9 +18,14 @@ class Api:
                 timeout = Api.__timeout__
             )
 
+            try:
+                data = response.json()
+            except:
+                data = {}
+
             return {
                 'status_code': response.status_code,
-                'data': response.json()
+                'data': data
             }
         except:
             return None
@@ -30,5 +35,5 @@ class Api:
         return Api.joker('GET', url)
 
     @staticmethod
-    def post(url: str, data: dict) -> Response|None:
+    def post(url: str, data) -> Response|None:
         return Api.joker('POST', url, data)

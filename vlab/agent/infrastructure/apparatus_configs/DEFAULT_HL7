@@ -1,8 +1,9 @@
 {
     "message_codes": {
-      "QBP_Q21": "query_exam_orders"
+      "QBP_Q21": "query_exam_orders",
+      "ORU_R01": "result_exam_orders"
     },
-    "exame_system": {
+    "exam_system": {
 	"00001": "00001"
     },
     "table_coding": {

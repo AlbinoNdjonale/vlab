@@ -7,8 +7,10 @@ from vlab.utils import Utils
 from .apparatus import Apparatus
 from vlab.nursery import Nursery
 
+clear = lambda : print("\033[H\033[J", end="")
+
 async def send_message(apparatus: Apparatus, nursery: Nursery):
-    while True:
+    while True:      
         command = (await asyncio.to_thread(input, '-> ')).split(' ')
 
         response = None
@@ -16,11 +18,16 @@ async def send_message(apparatus: Apparatus, nursery: Nursery):
             case 'q':
                 nursery.stop_all_tasks()
                 break
+            case 'clear':
+                clear()
             case 'set_sample' | 'analyze':
-                response = apparatus.exec(command[0], *command[1:])
+                response = await asyncio.to_thread(apparatus.exec, command[0], *command[1:])
             
         if response is not None:
-            print(f'{response}\n')
+            if isinstance(response, str):
+                response = [response]
+
+            print(f'\n{"\n".join(response)}\n')
 
 async def receive_message(apparatus: Apparatus, nursery: Nursery):
     buffer_manager  = apparatus.buffer_manager
@@ -34,11 +41,14 @@ async def receive_message(apparatus: Apparatus, nursery: Nursery):
             nursery.stop_all_tasks()
             break
 
-        print(f'\nMensagem: {message}')
+        response = await asyncio.to_thread(apparatus.interpret, message)
+
+        print(f'\n{response}')
         
-        print('\nEsperando: ...\n-> ', end = '')
+        print('\n-> ', end = '')
 
 async def main():
+    clear()
     config = Utils.read_config()
 
     mode = 'SERVER' if config['APPARATUS_AS_SERVER'] else 'CLIENT'

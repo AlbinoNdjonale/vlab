@@ -96,3 +96,19 @@ def delete_contract(request: Request, address: str):
     gateway.apparatus_config.remove_contract(client.get('name', ''), client['address'])
     
     return {'detail': 'Contract deleted'}
+
+@v1_routes.get('/exam_results')
+def get_exam_results(request: Request):
+    gateway: Gateway = request.app.state.gateway
+
+    return gateway.lis_server.exam_results
+
+@v1_routes.get('/exam_results/{sample_id}')
+def get_exam_result(request: Request, sample_id: str):
+    gateway: Gateway = request.app.state.gateway
+
+    for exam_result in gateway.lis_server.exam_results:
+        if exam_result['sample_id'] == sample_id:
+            return exam_result
+
+    return JSONResponse({'detail': 'Exam Result not found'}, 404)

@@ -101,6 +101,10 @@ class Gateway:
     @property
     def apparatus_config(self):
         return ApparatusConfig
+    
+    @property
+    def lis_server(self):
+        return LisServer()
 
     def protocol(self, protocol_name: ProtocolName) -> Protocol:
         return self.__hl7 if protocol_name == 'HL7' else self.__astm
@@ -159,7 +163,7 @@ class Gateway:
         message_strucuture = message_type.get('message_structure') or\
             f'{message_type.get("message_code")}_{message_type.get("trigger_event")}'
 
-        lis_server = LisServer()
+        lis_server = self.lis_server
 
         response_message: bytes|None = None
 
@@ -174,20 +178,21 @@ class Gateway:
                     'message_id': str(datetime.now().timestamp())[12:],
                     'mode': self.__mode,
                     'requisition_message_id': headers['message_id'],
-                    'requisition_query_id': message_decode_json['query_id']
+                    'requisition_query_id': message_decode_json['query_id'],
+                    'sample_id': message_decode_json['user_params'][0]
                 }
                 
                 error, exam_orders = lis_server.exam_orders(message_decode_json)
 
                 if error:
-                    response_message = protocol.create_order_exame(
+                    response_message = protocol.create_order_exam(
                         **params_base,   
                         message_processing_status = 'AE',
                         query_result_status = 'AE'
                     )
 
                 elif exam_orders is None:
-                    response_message = protocol.create_order_exame(
+                    response_message = protocol.create_order_exam(
                         **params_base,
                         message_processing_status = 'AA',
                         query_result_status = 'NF'
@@ -197,7 +202,7 @@ class Gateway:
 
                     patient = exam_orders.get('patient', {})
 
-                    response_message = protocol.create_order_exame(
+                    response_message = protocol.create_order_exam(
                         **params_base,
                         message_processing_status = 'AA',
                         query_result_status = 'OK',
@@ -209,10 +214,45 @@ class Gateway:
                         patient_last_name = patient.get('last_name') or '',
                         patient_gender = patient.get('gender') or '',
                         patient_birth = patient.get('birth') or '',
-                        exame_orders = exam_orders.get('exam_orders') or [],
+                        alternative_patient_id = patient.get('alternative_id') or '',
+                        visit_info = exam_orders.get('visit_info') or None,
+                        exam_orders = exam_orders.get('exam_orders') or [],
                         table_coding = apparatus_config.table_coding,
-                        exam_sytem = apparatus_config.exame_system
+                        exam_sytem = apparatus_config.exam_system
                     )
+            case 'result_exam_orders':
+                results = [
+                    {
+                        **{
+                            key: value
+                            for key, value in order.items()
+                            if key not in ['id', 'executor_side_id']
+                        },
+                        'sample_id': (order.get('id') or order.get('executor_side_id')),
+                        'observations': [
+                            observation
+                            for observation in message_decode_json['exam_results']
+                            if observation.pop('order_idx') == idx
+                        ]
+                    }
+                    for idx, order in enumerate(message_decode_json['exam_orders'])
+                ]
+
+                lis_server.send_results(results)
+
+                lis_server.save()
+
+                response_message = protocol.create_ack(
+                     app_receive = headers['app_receive'],
+                     facility_receive = headers['facility_receive'],
+                     device_name = headers['device_name'],
+                     supplier = headers['supplier'],
+                     datetime = protocol.format_date(datetime.now()),
+                     message_id = str(datetime.now().timestamp())[12:],
+                     mode = self.__mode,
+                     requisition_message_id = headers['message_id'],
+                     detail = 'Exam result receive'
+                )
             case _:
                 return
         

@@ -2,7 +2,9 @@ import json
 import os
 from typing import cast, TypeAlias, Literal
 
-MessageCode: TypeAlias = Literal['query_exam_orders']
+MessageCode: TypeAlias = Literal[
+    'query_exam_orders', 'result_exam_orders'
+]
 
 Protocol: TypeAlias = Literal['HL7', 'ASTM']
 
@@ -10,7 +12,7 @@ class ApparatusConfig:
     __path__: str = './vlab/agent/infrastructure/apparatus_configs/'
     __pathaddress__: str = f'{__path__}address/'
 
-    __fields__ = ['message_codes', 'exame_system', 'table_coding']
+    __fields__ = ['message_codes', 'exam_system', 'table_coding']
 
     def __init__(self, address: str) -> None:
         self.__address = ApparatusConfig.escape(address)
@@ -18,7 +20,7 @@ class ApparatusConfig:
         self.__config_file: str|None = None
         self.__protocol: Protocol|None = None
         self.message_codes: dict[str, MessageCode] = {}
-        self.exame_system: dict[str, str] = {}
+        self.exam_system: dict[str, str] = {}
         self.table_coding: dict[str, str] = {}
 
         file_protocol = f'{ApparatusConfig.__pathaddress__}{self.__address}'

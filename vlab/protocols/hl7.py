@@ -172,6 +172,67 @@ class ProtocolHl7:
                     response['query_id']    = get(fieds, 2)
                     response['user_params'] = fieds[3:]
 
+                case 'MSA':
+                    response['message_processing_status'] = get(fieds, 1)
+                    response['requisition_message_id'] = get(fieds, 2)
+
+                case 'QAK':
+                    response['requisition_query_id'] = get(fieds, 1)
+                    response['query_result_status'] = get(fieds, 2)
+
+                case 'PID':
+                    if not isinstance(response.get('patients'), list):
+                        response['patients'] = []
+
+                    names = re.split(re_sep(component_separator), get(fieds, 5))
+
+                    response['patients'].append({
+                        'id': get(fieds, 3),
+                        'alternative_id': get(fieds, 4),
+                        'name': get(names, 0),
+                        'last_name': get(names, 1),
+                        'birth': get(fieds, 7),
+                        'gender': get(fieds, 8)
+                    })
+
+                case 'OBR':
+                    if not isinstance(response.get('exam_ordes'), list):
+                        response['exam_orders'] = []
+
+                        service_identifier = re.split(
+                            re_sep(component_separator), get(fieds, 4)
+                        )
+
+                        response['exam_orders'].append({
+                            'id': get(fieds, 2),
+                            'executor_side_id': get(fieds, 3),
+                            'exam_id': get(service_identifier, 0),
+                            'exam_description': get(service_identifier, 1),
+                            'table_coding': get(service_identifier, 2)
+                        })
+
+                case 'OBX':
+                    if not isinstance(response.get('exam_ordes'), list):
+                        response['exam_results'] = []
+
+                        obs_identifier = re.split(
+                            re_sep(component_separator), get(fieds, 3)
+                        )
+
+                        response['exam_results'].append({
+                            'order_idx': len(response.get('exam_orders', [])) - 1,
+                            'type_value': get(fieds, 2),
+                            'observation_code': get(obs_identifier, 0),
+                            'observation_description': get(obs_identifier, 1),
+                            'system_coding': get(obs_identifier, 2),
+                            'value': get(fieds, 5),
+                            'unity': get(fieds, 6),
+                            'reference_range': get(fieds, 7),
+                            'abnormal': get(fieds, 8),
+                            'property': get(fieds, 9),
+                            'status': get(fieds, 11)
+                        })
+
                 case 'RCP':
                     response['query_priority'] = get(fieds, 1)
                     quantity_limited_request = re.split(
@@ -198,6 +259,8 @@ class ProtocolHl7:
                     )
 
                     response['response_continuation_pointer'] = get(fieds, 7)
+                case '':
+                    ...
 
         return {
             'json' : response,
