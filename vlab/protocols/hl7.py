@@ -160,39 +160,54 @@ class ProtocolHl7:
         }
 
         for segment in segments:
-            fieds = re.split(re_sep(field_separator), segment)
-            match get(fieds, 0):
+            fields = re.split(re_sep(field_separator), segment)
+            match get(fields, 0):
                 case 'QPD':
-                    query = re.split(re_sep(component_separator), get(fieds, 1))
+                    query = re.split(re_sep(component_separator), get(fields, 1))
                     response['equipment_standard_query'] = {
                         'identifier': get(query, 0),
                         'description': get(query, 1),
                         'coding_system': get(query, 2)
                     }
-                    response['query_id']    = get(fieds, 2)
-                    response['user_params'] = fieds[3:]
+                    response['query_id']    = get(fields, 2)
+                    response['user_params'] = fields[3:]
 
                 case 'MSA':
-                    response['message_processing_status'] = get(fieds, 1)
-                    response['requisition_message_id'] = get(fieds, 2)
+                    response['message_processing_status'] = get(fields, 1)
+                    response['requisition_message_id'] = get(fields, 2)
 
                 case 'QAK':
-                    response['requisition_query_id'] = get(fieds, 1)
-                    response['query_result_status'] = get(fieds, 2)
+                    response['requisition_query_id'] = get(fields, 1)
+                    response['query_result_status'] = get(fields, 2)
 
                 case 'PID':
                     if not isinstance(response.get('patients'), list):
                         response['patients'] = []
 
-                    names = re.split(re_sep(component_separator), get(fieds, 5))
+                    names = re.split(re_sep(component_separator), get(fields, 5))
 
                     response['patients'].append({
-                        'id': get(fieds, 3),
-                        'alternative_id': get(fieds, 4),
+                        'id': get(fields, 3),
+                        'alternative_id': get(fields, 4),
                         'name': get(names, 0),
                         'last_name': get(names, 1),
-                        'birth': get(fieds, 7),
-                        'gender': get(fieds, 8)
+                        'birth': get(fields, 7),
+                        'gender': get(fields, 8)
+                    })
+
+                case 'ORC':
+                    if not isinstance(response.get('common_orders'), list):
+                        response['common_orders'] = []
+
+                    response['common_orders'].append({
+                        'patient_idx': len(response['patients']) - 1,
+                        'order_control': get(fields, 1),
+                        'id': get(fields, 2),
+                        'executor_side_id': get(fields, 3),
+                        'order_status': get(fields, 5),
+                        'date': get(fields, 9),
+                        'entered_by': get(fields, 10),
+                        'ordering_provider': get(fields, 12)
                     })
 
                 case 'OBR':
@@ -200,12 +215,13 @@ class ProtocolHl7:
                         response['exam_orders'] = []
 
                         service_identifier = re.split(
-                            re_sep(component_separator), get(fieds, 4)
+                            re_sep(component_separator), get(fields, 4)
                         )
 
                         response['exam_orders'].append({
-                            'id': get(fieds, 2),
-                            'executor_side_id': get(fieds, 3),
+                            'patient_idx': len(response['patients']) - 1,
+                            'id': get(fields, 2),
+                            'executor_side_id': get(fields, 3),
                             'exam_id': get(service_identifier, 0),
                             'exam_description': get(service_identifier, 1),
                             'table_coding': get(service_identifier, 2)
@@ -216,28 +232,28 @@ class ProtocolHl7:
                         response['exam_results'] = []
 
                         obs_identifier = re.split(
-                            re_sep(component_separator), get(fieds, 3)
+                            re_sep(component_separator), get(fields, 3)
                         )
 
                         response['exam_results'].append({
                             'order_idx': len(response.get('exam_orders', [])) - 1,
-                            'type_value': get(fieds, 2),
+                            'type_value': get(fields, 2),
                             'observation_code': get(obs_identifier, 0),
                             'observation_description': get(obs_identifier, 1),
                             'system_coding': get(obs_identifier, 2),
-                            'value': get(fieds, 5),
-                            'unity': get(fieds, 6),
-                            'reference_range': get(fieds, 7),
-                            'abnormal': get(fieds, 8),
-                            'property': get(fieds, 9),
-                            'status': get(fieds, 11)
+                            'value': get(fields, 5),
+                            'unity': get(fields, 6),
+                            'reference_range': get(fields, 7),
+                            'abnormal': get(fields, 8),
+                            'property': get(fields, 9),
+                            'status': get(fields, 11)
                         })
 
                 case 'RCP':
-                    response['query_priority'] = get(fieds, 1)
+                    response['query_priority'] = get(fields, 1)
                     quantity_limited_request = re.split(
                         re_sep(component_separator),
-                        get(fieds, 2)
+                        get(fields, 2)
                     )
                     response['quantity_limited_request'] = {
                         'quantity': get(quantity_limited_request, 0),
@@ -245,20 +261,20 @@ class ProtocolHl7:
                     }
                     response_sort_parameter = re.split(
                         re_sep(component_separator),
-                        get(fieds, 3)
+                        get(fields, 3)
                     )
                     response['response_sort_parameter'] = {
                         'number_of_field': get(response_sort_parameter, 0),
                         'name_of_field': get(response_sort_parameter, 1)
                     }
-                    response['modify_indicator'] = get(fieds, 4)
-                    response['sort_order'] = get(fieds, 5)
+                    response['modify_indicator'] = get(fields, 4)
+                    response['sort_order'] = get(fields, 5)
                     response['segment_group_included'] = re.split(
                         re_sep(repetition_separator),
-                        get(fieds, 6)
+                        get(fields, 6)
                     )
 
-                    response['response_continuation_pointer'] = get(fieds, 7)
+                    response['response_continuation_pointer'] = get(fields, 7)
                 case '':
                     ...
 

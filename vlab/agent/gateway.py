@@ -46,6 +46,7 @@ class Gateway:
         self,
         hl7_protocol: Protocol,
         astm_protocol: Protocol,
+        url_lis_server: str,
         mode: ModeProcessing = 'P'
     ) -> None:
         self.__clients: list[Client] = []
@@ -57,6 +58,8 @@ class Gateway:
         self.__mode = mode
 
         self.__next_client_id = 0
+
+        self.__url_lis_server = url_lis_server
     
     def add_device(self, address: str, port: int|None = None):
         if port: # TCP/IP
@@ -94,6 +97,12 @@ class Gateway:
 
         return None
 
+    def remove_client(self, client_id: int):
+        self.__clients = [
+            client
+            for client in self.__clients if not client['id'] == client_id
+        ]
+
     @property
     def get_devices(self) -> list[Client]:
         return self.__clients
@@ -104,7 +113,9 @@ class Gateway:
     
     @property
     def lis_server(self):
-        return LisServer()
+        lis_server = LisServer()
+        lis_server.set_base_url(self.__url_lis_server)
+        return lis_server
 
     def protocol(self, protocol_name: ProtocolName) -> Protocol:
         return self.__hl7 if protocol_name == 'HL7' else self.__astm
@@ -125,6 +136,45 @@ class Gateway:
                     return (
                         self.__hl7 if protocol == 'HL7' else self.__astm
                     ).buffer_manager
+
+    def send_exam_orders(self, message: dict, client_address: str):
+        self.lis_server.insert_lote_exam_orders(message.get('exam_orders', []))
+        self.lis_server.save()
+
+        client = self.get_client(client_address, 'address')
+
+        if client is None:
+            return
+
+        apparatus_config = ApparatusConfig(client['address'])
+
+        if (protocol_name := apparatus_config.protocol) is None:
+            return
+
+        if client.get('protocol') is None:
+            client['protocol'] = protocol_name
+
+        protocol = self.protocol(protocol_name)
+
+        device_name, supplier = client.get('name', '_').split('_')
+
+        response_message = protocol.create_lote_order_exam(
+            app_receive = message.get('app_id', ''),
+            facility_receive = message.get('facility_id', ''),
+            device_name = device_name,
+            supplier = supplier,
+            mode = self.__mode,
+            datetime = protocol.format_date(datetime.now()),
+            message_id = str(datetime.now().timestamp())[12:],
+            table_coding = apparatus_config.table_coding,
+            exam_sytem = apparatus_config.exam_system,
+            exam_orders = message.get('exam_orders', [])
+        ) 
+
+        self.__links['SERVER']({
+            'comunication': client['conn'],
+            'message': response_message
+        })
 
     def receive_message(self, message: bytes, client_id: int):
         client = self.get_client(client_id)

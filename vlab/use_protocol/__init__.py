@@ -45,7 +45,7 @@ class Protocol:
         return hl7.create_message(
             hl7.segment(
                 'MSH', app_receive, facility_receive, device_name, supplier, datetime,
-                VOID, hl7.field('ACK', 'R01', 'RSP_K21'), message_id, mode, hl7.version
+                VOID, hl7.field('ACK', 'R01', 'ACK_R01'), message_id, mode, hl7.version
             ),
             hl7.segment('MSA', 'AA', requisition_message_id, detail)
         )
@@ -84,14 +84,16 @@ class Protocol:
         datetime: str,
         mode: str,
         message_id: str,
-        patients: list = [],
+        exam_orders: list = [],
+        table_coding: dict[str, str] = {},
+        exam_sytem: dict = {}
     ):
         hl7 = self.__protocol
 
         return hl7.create_message(
             hl7.segment(
                 'MSH', app_receive, facility_receive, device_name, supplier, datetime,
-                VOID, hl7.field('ORM', 'O01', 'RSP_K21'), message_id, mode, hl7.version
+                VOID, hl7.field('ORM', 'O01', 'ORM_O01'), message_id, mode, hl7.version
             ),
             *[
                 segment
@@ -99,21 +101,37 @@ class Protocol:
                 (
                     [
                         hl7.segment(
-                            'PID', str(idx+1), VOID, patient.get('id') or VOID,
-                            patient.get('alternative_id') or VOID,
+                            'PID', str(idx+1), VOID, exam_order.get('patient', {}).get('id') or VOID,
+                            exam_order.get('patient', {}).get('alternative_id') or VOID,
                             hl7.field(
-                                patient.get('name') or VOID,
-                                patient.get('last_name') or VOID
+                                exam_order.get('patient', {}).get('name') or VOID,
+                                exam_order.get('patient', {}).get('last_name') or VOID
                             ),
-                            VOID, patient.get('birth') or VOID,
-                            patient.get('gender') or VOID
+                            VOID, exam_order.get('patient', {}).get('birth') or VOID,
+                            exam_order.get('patient', {}).get('gender') or VOID
                         ),
                         hl7.segment(
-                            'ORC', patient.get('order_code') or VOID,
-
-                        )
+                            'ORC', exam_order.get('order_control', 'NW'),
+                            exam_order.get('id') or VOID, VOID, VOID,
+                            exam_order.get('status') or VOID, *([VOID]*3),
+                            datetime, exam_order.get('entered_by', VOID),
+                            VOID, VOID, exam_order.get('ordering_provider', VOID)
+                        ),
+                        *[
+                            hl7.segment(
+                                'OBR', str(idx_+1), exam.get('sample_id', VOID), VOID,
+                                hl7.field(
+                                    exam_sytem.get(exam.get('exam_id') or VOID) or VOID,
+                                    exam.get('exam_description') or VOID,
+                                    table_coding.get(exam.get('exam_id') or VOID) or VOID
+                                ),
+                                *([VOID]*20),
+                                exam.get('exam_result_status') or VOID
+                            )
+                            for idx_, exam in enumerate(exam_order.get('exams', []))
+                        ]
                     ]
-                    for idx, patient in enumerate(patients)
+                    for idx, exam_order in enumerate(exam_orders)
                 )
                 for segment in group
             ]

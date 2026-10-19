@@ -26,7 +26,14 @@ class Sample(TypedDict):
     observations: list[Observation]
 
 ApparatusMode: TypeAlias = Literal['P', 'T', 'D']
-Command: TypeAlias = Literal['analyze', 'set_sample']
+Command: TypeAlias = Literal[
+    'analyze',
+    'set_sample',
+    'remove_sample',
+    'clear_rack',
+    'show_sample',
+    'show_exam_orders'
+]
 
 code_desc = {
 }
@@ -92,6 +99,30 @@ class Apparatus:
                 })
 
                 return f"Amostra com ID '{params[0]}' adicionado na rack"
+            case 'remove_sample':
+                if len(params) == 0: return 'Informe o ID da amostra'
+
+                self.__samples = [
+                    sample
+                    for sample in self.__samples if not sample['id'] == params[0]
+                ]
+                
+                return f"Amostra com ID '{params[0]}' removida na rack"
+            case 'clear_rack':
+                self.__samples = []
+
+                return f"Todas as amostras foram removidas da rack"
+            case 'show_sample':
+                if len(params) == 0: return 'Informe o ID da amostra'
+                
+                for sample in self.__samples:
+                    if sample['id'] == params[0]:
+                        return '\n'.join([f'{key} = {value}' for key, value in sample.items()])
+
+                return f"Amostra com ID '{params[0]}' não encontrada na rack"
+            case 'show_exam_orders':
+                return '\n'.join([f'{key} = {value}' for key, value in self.__exam_orders.items()])
+
             case 'analyze':
                 if not self.__samples: return 'Sem amostras na rack'
 
@@ -135,6 +166,9 @@ class Apparatus:
                             continue
                     
                     if exam_order:
+                        if exam_order.get('order_control', 'NW') in ['CA', 'DC']:
+                            continue
+
                         patient = exam_order.get('patient') or {}
 
                         exam_orders = []
@@ -143,7 +177,10 @@ class Apparatus:
                             observations = {}
 
                             necessary_observations = {
-                                '00001': ['6690-2', '789-8', '718-7', '777-3']
+                                '00001': ['6690-2', '789-8', '718-7', '777-3', '4544-3'],
+                                '00020': ['94500-6', '94505-5', '94506-3'],
+                                '00030': ['68088-3', '75622-1'],
+                                '00040': ['32571-2', '42481-2', '89365-1']
                             }
     
                             exam_orders.append({
@@ -198,6 +235,7 @@ class Apparatus:
         match message_codes[self.__protocol.protocol_name].get(message_strucuture):
             case 'exam_orders':
                 sample_id = message_decode_json["user_params"][0]
+
                 match message_decode_json.get('query_result_status'):
                     case 'AE':
                         return 'Error in server to process sample '\
@@ -207,12 +245,28 @@ class Apparatus:
                             +f'exam order for sample {sample_id}'
                     case 'OK':
                         self.__exam_orders[sample_id] = {
+                            'order_control': 'NW',
                             'patient': message_decode_json.get('patients', [{}])[0],
                             'exam_orders': message_decode_json.get('exam_orders', [])
                         }
                         return f"Sample {sample_id}'s exam orders successfully processed"
+            case 'lote_exam_orders':
+                for common_order in message_decode_json['common_orders']:
+                    sample_id = common_order['id']
+                    self.__exam_orders[common_order['id']] = {
+                        'order_control': common_order['order_control'],
+                        'patient': message_decode_json.get(
+                            'patients'
+                        )[common_order['patient_idx']],
+                        'exam_orders': [
+                            exam_order  
+                            for exam_order in message_decode_json.get('exam_orders', [])
+                            if exam_order['id'] == sample_id
+                        ]
+                    }
+                return f"Lote exam ordera successfully processed"
         
-        return message_decode
+        return ""
 
     @property
     def buffer_manager(self):

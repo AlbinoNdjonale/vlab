@@ -49,7 +49,9 @@ async def handle_client_server(
 
             if message == 'AWAIT': continue
             
-            if not message:break
+            if not message:
+                gateway.remove_client(client_id)
+                break
 
             gateway.receive_message(message, client_id)
     finally:
@@ -69,7 +71,9 @@ async def handle_client(gateway: Gateway, comunication: InterfaceTcpIp, client_i
 
                 if message == 'AWAIT': continue
 
-                if not message:break
+                if not message:
+                    gateway.remove_client(client_id)
+                    break
 
                 gateway.receive_message(message, client_id)
     finally:
@@ -88,7 +92,9 @@ async def handle_client_serial(
 
             if message == 'AWAIT': continue
 
-            if not message:break
+            if not message:
+                gateway.remove_client(client_id)
+                break
 
             gateway.receive_message(message, client_id)
     finally:
@@ -168,10 +174,11 @@ async def start_server_tcp(gateway: Gateway, config: Config):
 
 async def main(app: HasDynamicState):
     config = Utils.read_config()
-
+    
     gateway = Gateway(
         Protocol('HL7'),
         Protocol('ASTM'),
+        config['URL_LIS_SERVER'],
         config.get('MODE', 'P')
     )
 

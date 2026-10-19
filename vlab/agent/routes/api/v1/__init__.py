@@ -6,6 +6,8 @@ from vlab.agent.gateway import Gateway
 
 v1_routes = APIRouter()
 
+def escape(text: str): return text.replace('_', '/')
+
 @v1_routes.get('/serial_ports')
 def serial_ports():
     return [
@@ -42,7 +44,7 @@ async def connect_device(request: Request):
 async def get_device(request: Request, address: str):
     gateway: Gateway = request.app.state.gateway
 
-    client = gateway.get_client(address, by = 'address')
+    client = gateway.get_client(escape(address), by = 'address')
 
     if client is None:
         return JSONResponse({'detail': 'Device not found'}, 404)
@@ -88,7 +90,7 @@ async def config_device(request: Request):
 def delete_contract(request: Request, address: str):
     gateway: Gateway = request.app.state.gateway
 
-    client = gateway.get_client(address, by = 'address')
+    client = gateway.get_client(escape(address), by = 'address')
 
     if client is None:
         return JSONResponse({'detail': 'Device not found'}, 404)
@@ -112,3 +114,22 @@ def get_exam_result(request: Request, sample_id: str):
             return exam_result
 
     return JSONResponse({'detail': 'Exam Result not found'}, 404)
+
+@v1_routes.get('/exam_orders')
+def get_exam_orders(request: Request):
+    gateway: Gateway = request.app.state.gateway
+
+    return gateway.lis_server.lote_exam_orders
+
+@v1_routes.post('/exam_orders/{device_address}')
+async def set_exam_orders(request: Request, device_address: str):
+    try:
+        data = await request.json()
+    except:
+        return JSONResponse({"detail": "Invalid body"}, 400)
+
+    gateway: Gateway = request.app.state.gateway
+
+    gateway.send_exam_orders(data, escape(device_address))
+
+    return {'detail': 'Proccess add'}

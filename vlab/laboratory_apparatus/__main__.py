@@ -20,7 +20,7 @@ async def send_message(apparatus: Apparatus, nursery: Nursery):
                 break
             case 'clear':
                 clear()
-            case 'set_sample' | 'analyze':
+            case 'set_sample' | 'remove_sample' | 'show_sample' | 'show_exam_orders' | 'clear_rack' | 'analyze':
                 response = await asyncio.to_thread(apparatus.exec, command[0], *command[1:])
             
         if response is not None:

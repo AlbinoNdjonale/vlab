@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import json
+from json import JSONDecodeError
 from typing import cast
 import os
 
@@ -23,11 +24,14 @@ class BaseModel(ABC):
             with open(self.filename, 'w') as file: file.write("{}")
         else:
             with open(self.filename, 'r') as file:
-                data = json.loads(file.read())
+                try:
+                    data = json.loads(file.read())
 
-                for key in cast(list[str], self.__fields__):
-                    if key in data:
-                        setattr(self, key, data[key])
+                    for key in cast(list[str], self.__fields__):
+                        if key in data:
+                            setattr(self, key, data[key])
+                except JSONDecodeError:
+                    pass
                             
     def save(self):
         data = {
