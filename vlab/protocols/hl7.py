@@ -214,40 +214,40 @@ class ProtocolHl7:
                     if not isinstance(response.get('exam_ordes'), list):
                         response['exam_orders'] = []
 
-                        service_identifier = re.split(
-                            re_sep(component_separator), get(fields, 4)
-                        )
+                    service_identifier = re.split(
+                        re_sep(component_separator), get(fields, 4)
+                    )
 
-                        response['exam_orders'].append({
-                            'patient_idx': len(response['patients']) - 1,
-                            'id': get(fields, 2),
-                            'executor_side_id': get(fields, 3),
-                            'exam_id': get(service_identifier, 0),
-                            'exam_description': get(service_identifier, 1),
-                            'table_coding': get(service_identifier, 2)
-                        })
+                    response['exam_orders'].append({
+                        'patient_idx': len(response['patients']) - 1,
+                        'id': get(fields, 2),
+                        'executor_side_id': get(fields, 3),
+                        'exam_id': get(service_identifier, 0),
+                        'exam_description': get(service_identifier, 1),
+                        'table_coding': get(service_identifier, 2)
+                    })
 
                 case 'OBX':
                     if not isinstance(response.get('exam_ordes'), list):
                         response['exam_results'] = []
 
-                        obs_identifier = re.split(
-                            re_sep(component_separator), get(fields, 3)
-                        )
+                    obs_identifier = re.split(
+                        re_sep(component_separator), get(fields, 3)
+                    )
 
-                        response['exam_results'].append({
-                            'order_idx': len(response.get('exam_orders', [])) - 1,
-                            'type_value': get(fields, 2),
-                            'observation_code': get(obs_identifier, 0),
-                            'observation_description': get(obs_identifier, 1),
-                            'system_coding': get(obs_identifier, 2),
-                            'value': get(fields, 5),
-                            'unity': get(fields, 6),
-                            'reference_range': get(fields, 7),
-                            'abnormal': get(fields, 8),
-                            'property': get(fields, 9),
-                            'status': get(fields, 11)
-                        })
+                    response['exam_results'].append({
+                        'order_idx': len(response.get('exam_orders', [])) - 1,
+                        'type_value': get(fields, 2),
+                        'observation_code': get(obs_identifier, 0),
+                        'observation_description': get(obs_identifier, 1),
+                        'system_coding': get(obs_identifier, 2),
+                        'value': get(fields, 5),
+                        'unity': get(fields, 6),
+                        'reference_range': get(fields, 7),
+                        'abnormal': get(fields, 8),
+                        'property': get(fields, 9),
+                        'status': get(fields, 11)
+                    })
 
                 case 'RCP':
                     response['query_priority'] = get(fields, 1)
