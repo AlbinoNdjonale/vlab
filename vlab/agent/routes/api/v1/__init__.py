@@ -68,7 +68,7 @@ async def config_device(request: Request):
         return JSONResponse({"detail": "Invalid body"}, 400)
 
     if (address := data.get("device_address")) is None or address.split() == '':
-        return JSONResponse({"'device_address' is required"}, 400)
+        return JSONResponse({"detail": "'device_address' is required"}, 400)
 
     gateway: Gateway = request.app.state.gateway
 
