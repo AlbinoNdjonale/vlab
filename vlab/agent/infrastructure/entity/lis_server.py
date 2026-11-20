@@ -36,7 +36,7 @@ class LisServer(BaseModel):
         self.lote_exam_orders.extend(exam_orders)
 
     def send_results(self, results: list[dict]):
-        self.exam_results = results
+        self.exam_results.extend(results)
 
         response = Api.post(f'{self.base_url}/send_exam_results', results)
 
