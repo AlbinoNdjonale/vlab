@@ -302,19 +302,17 @@ In the example, `QBP_Q21` is associated with querying orders and `ORU_R01` with 
 
 ### 5. Delete a Device Configuration
 
-`DELETE /api/v1/delete_contact/{address}`
+`DELETE /api/v1/delete_contract/{address}`
 
 Removes the contract/configuration associated with the device address, following the behavior described for this operation.
 
 **Example**
 
 ```http
-DELETE /api/v1/delete_contact/_dev_ttyUSB0
+DELETE /api/v1/delete_contract/_dev_ttyUSB0
 ```
 
 For serial addresses, replace `/` with `_` in the URL path.
-
-> **Warning:** The endpoint name provided in the specification is `delete_contact`, although the description refers to deleting a contract. Verify the name in the published codebase before changing or documenting it as `delete_contract`.
 
 ---
 
@@ -690,7 +688,7 @@ Use `set_sample` followed by the sample identifier and observation data.
 **Example**
 
 ```text
-set_sample 1234 code = 718-7; value = 14.2; unity = g/dL, type_value = NM; ref_min = 12.0; ref_max = 16.0
+set_sample 1234 code = 718-7; value = 14.2; unity = g/dL; type_value = NM; ref_min = 12.0; ref_max = 16.0
 ```
 
 The observation definition process can be repeated to add more parameters to the same sample, following the format supported by the simulator.
